@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Database สำหรับเก็บข้อมูลผู้ใช้และ Log
+  db:
+    image: mariadb:10.6
+    container_name: daloradius-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: radius
+      MYSQL_USER: radius
+      MYSQL_PASSWORD: radpass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # FreeRADIUS Engine (ตัวที่ทำหน้าที่คุยกับ Router/Access Point)
+  freeradius:
+    image: freeradius/freeradius-server:latest
+    container_name: freeradius
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    environment:
+      RADIUS_DB_HOST: db
+      RADIUS_DB_USER: radius
+      RADIUS_DB_PASS: radpass
+      RADIUS_DB_NAME: radius
+
+  # daloRADIUS Web Management (ตัวที่คุณ Build เอง)
+  daloradius:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: daloradius-web
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8085:80"
+    environment:
+      - DB_HOST=db
+      - DB_USER=radius
+      - DB_PASS=radpass
+      - DB_NAME=radius
+
+volumes:
+  db_data:

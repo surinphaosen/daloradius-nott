@@ -1,0 +1,1 @@
+# docker exec -i daloradius-db mysql -u radius -pradpass radius < ./contrib/db/mysql-daloradius.sql

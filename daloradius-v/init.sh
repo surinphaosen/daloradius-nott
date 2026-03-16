@@ -43,6 +43,15 @@ function init_database {
     echo "Database initialization for daloRADIUS completed."
 }
 
+function seed_portal_user {
+    mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" <<'SQL'
+INSERT INTO userinfo (username, firstname, lastname, portalloginpassword, enableportallogin, creationdate, creationby)
+SELECT 'admin', 'Portal', 'Admin', 'radius', 1, NOW(), 'seed-script'
+WHERE NOT EXISTS (SELECT 1 FROM userinfo LIMIT 1);
+SQL
+    echo "Default portal user ensured (admin / radius)."
+}
+
 echo "Starting daloRADIUS..."
 
 INIT_LOCK=/data/.init_done
@@ -72,6 +81,8 @@ else
     init_database
     date > $DB_LOCK
 fi
+
+seed_portal_user
 
 # Start Apache2 in the foreground
 /usr/sbin/apachectl -DFOREGROUND -k start
